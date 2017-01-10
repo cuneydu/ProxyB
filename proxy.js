@@ -3,6 +3,7 @@ var url = require('url');
 var http = require('http');
 var assert = require('assert');
 var debug = require('debug')('proxy');
+var urlencode = require('urlencode');
 
 
 // log levels
@@ -35,11 +36,12 @@ var requestListener = function (req, res) {
 function setup (server, options) {
     if (!server) {
         server = http.createServer();
-        server.listen(8080);
+        server.listen(9000);
         server.on('request', onrequest);
         server.on('connect', onconnect);
     }
 
+    console.log("Server oluşu!");
     return server;
 }
 
@@ -190,17 +192,10 @@ function onrequest (req, res) {
             return;
         } */
 
-        var POST = {};
-        req.on('data', function(data) {
-
-            data = data.toString();
-            data = data.split('&');
-            for (var i = 0; i < data.length; i++) {
-                var _data = data[i].split("=");
-                POST[_data[0]] = _data[1];
-            }
-            console.log(POST);
-        });
+        if(parsed.method == "GET"){
+            onGet(parsed);
+        }
+        req.on('data',onPost);
 
         var gotResponse = false;
         var proxyReq = http.request(parsed);
@@ -263,6 +258,8 @@ function onrequest (req, res) {
             cleanup();
         }
 
+       
+
         function cleanup () {
             debug.response('cleanup');
             socket.removeListener('close', onclose);
@@ -271,6 +268,29 @@ function onrequest (req, res) {
 
         req.pipe(proxyReq);
     });
+}
+
+function onGet(parsed){
+        var query=parsed.href; 
+        controlData(query); 
+}
+        
+function onPost (data) {
+    var POST = {};
+    data = data.toString();
+    data = data.split('&');
+    for (var i = 0; i < data.length; i++) {
+            var _data = data[i].split("=");
+            POST[_data[0]] = _data[1];
+            controlData(_data[1]); 
+        }
+}
+
+function controlData(data)
+{
+    var querystring= urlencode.decode(data, "utf8");
+    querystring= querystring.split("+").join(' ');
+    console.log(decodeURI(querystring)); 
 }
 
 /**
