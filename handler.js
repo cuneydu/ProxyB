@@ -21,11 +21,11 @@ var controlData =function(data)
 
     var d1 = regx()
             .then("'") 
-            .maybe(' or');
+            .maybe(' or ');
 
     var d2 = regx()
             .then("'") 
-            .maybe(' and')
+            .maybe(' and ')
 
     var d3 = regx() 
             .then("'")
@@ -60,7 +60,7 @@ var controlData =function(data)
     .then('insert ');   
 
      var d11 = regx()
-    .maybe("or")
+    .maybe("or ")
     .then(' 1=1--');  
 
     var d12 = regx()

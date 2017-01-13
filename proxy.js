@@ -180,8 +180,7 @@ function onrequest (req, res) {
             res.writeHead(400);
             res.end('Only "http:" protocol prefix is supported\n');
             return;
-        } */
-        var bodyParser = require('body-parser');
+        } */ 
  
         if(parsed.method == "GET"){
             onGet(parsed);
@@ -259,14 +258,15 @@ function onrequest (req, res) {
             res.removeListener('finish', onfinish);
         }
 
-        req.pipe(proxyReq);
-
-       if(injectionHandler().IsInjected())                                                       //Engelle hata üret!!!
+        if(injectionHandler().IsInjected())                                                       //Engelle hata üret!!!
         {
-             debug.response('Prevented injection!');
-             res.writeHead(500,"Preventing .. Sql injection Attack!"); 
-            return;
+            debug.response('Prevented injection!');  
+            // res.write('<html><body><h1>Erişim engellendi!</h1></body></html>');
+            res.writeHead(200,'Preventing .. Sql injection Attack!');  
         }
+
+        req.pipe(proxyReq); 
+
     });
 }
 
@@ -285,11 +285,7 @@ function onPost(data) {
             injectionHandler().controlData(_data[1]); 
         }
 }
-
-//    console.log(injectionHandler().injectionAlert);
-//    injectionHandler().controlData("Bada");
  
-
 /**
  * HTTP CONNECT proxy requests.
  */
@@ -352,14 +348,17 @@ function onconnect (req, socket, head) {
         debug.response('HTTP/1.1 200 Connection established');
         gotResponse = true;
         res.removeListener('finish', onfinish);
-
+ 
         res.writeHead(200, 'Connection established');
+        
 
         // HACK: force a flush of the HTTP header
         res._send('');
 
         // relinquish control of the `socket` from the ServerResponse instance
         res.detachSocket(socket);
+
+        
 
         // nullify the ServerResponse object, so that it can be cleaned
         // up before this socket proxying is completed
