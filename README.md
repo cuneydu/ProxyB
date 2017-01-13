@@ -1,7 +1,7 @@
 # ProxyB
-Proxy for prevent Cross-Site Scripting(XSS) and Sql Injection Attacks
+Proxy for prevent Cross-Site Scripting(XSS) and Sql Injection Attacks (RegEx)
 
 node proxy.js
 
 
-open localhost:8080
+open localhost:9000
