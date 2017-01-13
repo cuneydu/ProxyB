@@ -4,7 +4,8 @@ var http = require('http');
 var assert = require('assert');
 var debug = require('debug')('proxy');
 var urlencode = require('urlencode');
-
+var regx = require('verbal-expressions');
+var injectionHandler = require('./handler');
 
 // log levels
 debug.request = require('debug')('proxy ← ← ←');
@@ -17,26 +18,15 @@ var hostname = require('os').hostname();
 
 // proxy server version
 var version  = require('./package.json').version;
-
-/**
- * Module exports.
- */
-
+var runingPort = 9000;
 module.exports = setup;
-
-var requestListener = function (req, res) {
-    res.writeHead(200);
-    res.end('Hello, Earth!\n');
-    console.log('Merhaba');
-}
-
 
 
 
 function setup (server, options) {
     if (!server) {
         server = http.createServer();
-        server.listen(9000);
+        server.listen(runingPort);
         server.on('request', onrequest);
         server.on('connect', onconnect);
     }
@@ -47,7 +37,7 @@ function setup (server, options) {
 
 
 
-var hopByHopHeaders = [
+var TopHeaders = [
     'Connection',
     'Keep-Alive',
     'Proxy-Authenticate',
@@ -57,7 +47,7 @@ var hopByHopHeaders = [
     'Transfer-Encoding',
     'Upgrade'
 ];
-var isHopByHop = new RegExp('^(' + hopByHopHeaders.join('|') + ')$', 'i');
+var IsTopHeader = new RegExp('^(' + TopHeaders.join('|') + ')$', 'i');
 
 
 function eachHeader (obj, fn) {
@@ -144,7 +134,7 @@ function onrequest (req, res) {
                 debug.proxyRequest('appending to existing "%s" header: "%s"', key, value);
             }
 
-            if (isHopByHop.test(key)) {
+            if (IsTopHeader.test(key)) {
                 debug.proxyRequest('ignoring hop-by-hop header "%s"', key);
             } else {
                 var v = headers[key];
@@ -191,11 +181,14 @@ function onrequest (req, res) {
             res.end('Only "http:" protocol prefix is supported\n');
             return;
         } */
-
+        var bodyParser = require('body-parser');
+ 
         if(parsed.method == "GET"){
             onGet(parsed);
         }
-        req.on('data',onPost);
+        req.on('data',onPost); 
+
+      
 
         var gotResponse = false;
         var proxyReq = http.request(parsed);
@@ -208,7 +201,7 @@ function onrequest (req, res) {
             var headers = {};
             eachHeader(proxyRes, function (key, value) {
                 debug.proxyResponse('Proxy Response Header: "%s: %s"', key, value);
-                if (isHopByHop.test(key)) {
+                if (IsTopHeader.test(key)) {
                     debug.response('ignoring hop-by-hop header "%s"', key);
                 } else {
                     var v = headers[key];
@@ -267,38 +260,41 @@ function onrequest (req, res) {
         }
 
         req.pipe(proxyReq);
+
+       if(injectionHandler().IsInjected())                                                       //Engelle hata üret!!!
+        {
+             debug.response('Prevented injection!');
+             res.writeHead(500,"Preventing .. Sql injection Attack!"); 
+            return;
+        }
     });
 }
 
 function onGet(parsed){
         var query=parsed.href; 
-        controlData(query); 
+        injectionHandler().controlData(query); 
 }
         
-function onPost (data) {
+function onPost(data) {  
     var POST = {};
     data = data.toString();
     data = data.split('&');
     for (var i = 0; i < data.length; i++) {
             var _data = data[i].split("=");
             POST[_data[0]] = _data[1];
-            controlData(_data[1]); 
+            injectionHandler().controlData(_data[1]); 
         }
 }
 
-function controlData(data)
-{
-    var querystring= urlencode.decode(data, "utf8");
-    querystring= querystring.split("+").join(' ');
-    console.log(decodeURI(querystring)); 
-}
+//    console.log(injectionHandler().injectionAlert);
+//    injectionHandler().controlData("Bada");
+ 
 
 /**
  * HTTP CONNECT proxy requests.
  */
 
 function onconnect (req, socket, head) {
-
     debug.request('%s %s HTTP/%s ', req.method, req.url, req.httpVersion);
     assert(!head || 0 == head.length, '"head" should be empty for proxy requests');
 
@@ -471,9 +467,5 @@ function requestAuthorization (req, res) {
 
 console.log(setup());
 
-//var server = http.createServer(requestListener);
-//server.listen(8080);
-//console.log('yayında');
-//console.log('open http://localhost:8080/');
 
 
